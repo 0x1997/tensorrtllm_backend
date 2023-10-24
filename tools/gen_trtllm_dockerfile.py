@@ -42,8 +42,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends python-is-pytho
 """
     if clone_repo:
         df += """
-# FIXME: Update the url
 RUN git clone --single-branch --depth=1 -b {} https://github.com/triton-inference-server/tensorrtllm_backend.git
+RUN cd tensorrtllm_backend && git submodule set-url -- tensorrt_llm https://github.com/NVIDIA/TensorRT-LLM.git
+RUN cd tensorrtllm_backend && git submodule sync
 RUN cd tensorrtllm_backend && git submodule update --init --recursive
 RUN cp tensorrtllm_backend/tensorrt_llm/docker/common/install_tensorrt.sh /tmp/
 RUN rm -fr tensorrtllm_backend
@@ -64,6 +65,7 @@ ENV TRT_ROOT=/usr/local/tensorrt
 def create_postbuild(repo_tag="main"):
     df = """
 WORKDIR /workspace
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip
 """
     df += install_new_version_of_TRT(clone_repo=True,
                                      trtllm_be_repo_tag=repo_tag)
