@@ -114,17 +114,17 @@ WORKDIR /workspace
 RUN apt-get update && apt-get install python3-pip -y
 COPY requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt --extra-index-url https://pypi.ngc.nvidia.com
-"""
-    df += install_new_version_of_TRT()
-    df += install_pytorch()
 
-    df += """
 FROM base as dev
 
 # CMake
 RUN ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
 RUN bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
 ENV PATH="/usr/local/bin:${PATH}"
+"""
+    df += install_new_version_of_TRT()
+    df += install_pytorch()
+    df += """
 
 COPY tensorrt_llm/requirements-dev.txt /tmp/
 RUN pip install -r /tmp/requirements-dev.txt --extra-index-url https://pypi.ngc.nvidia.com
