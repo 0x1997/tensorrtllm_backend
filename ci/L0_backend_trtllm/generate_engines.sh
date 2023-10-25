@@ -78,7 +78,7 @@ function install_trt_llm {
     export PATH="/usr/local/bin:${PATH}"
     (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
         python3 ./scripts/build_wheel.py --trt_root="${TRT_ROOT}" &&
-        pip install ./build/tensorrt_llm*.whl)
+        pip3 install ./build/tensorrt_llm*.whl)
 }
 
 # Install TRT LLM
@@ -101,4 +101,4 @@ mv ${GPT_DIR}/gpt2/* tokenizer/
 # Now that the engines are generated, we should remove the
 # tensorrt_llm module to ensure the C++ backend tests are
 # not using it
-rm -rf /usr/local/lib/python3.10/dist-packages/tensorrt_llm
+pip3 uninstall -y torch tensorrt_llm
