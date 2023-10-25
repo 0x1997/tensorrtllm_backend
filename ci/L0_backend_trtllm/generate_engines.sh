@@ -76,6 +76,7 @@ function build_tensorrt_engine_inflight_batcher_multi_gpu {
 ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
 bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
 export PATH="/usr/local/bin:${PATH}"
+apt-get update && apt-get install git-lfs -y --no-install-recommends
 (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
     git lfs install &&
     git lfs pull &&
