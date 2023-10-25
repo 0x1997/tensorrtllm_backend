@@ -29,36 +29,23 @@ BASE_DIR=/opt/tritonserver/tensorrtllm_backend/ci/L0_backend_trtllm
 GPT_DIR=/opt/tritonserver/tensorrtllm_backend/tensorrt_llm/examples/gpt
 
 function build_base_model {
+    local NUM_GPUS=$1
     cd ${GPT_DIR}
     rm -rf gpt2 && git clone https://huggingface.co/gpt2-medium gpt2
     pushd gpt2 && rm pytorch_model.bin model.safetensors && wget -q https://huggingface.co/gpt2-medium/resolve/main/pytorch_model.bin && popd
-    python3 hf_gpt_convert.py -i gpt2 -o ./c-model/gpt2 --tensor-parallelism 1 --storage-type float16
+    python3 hf_gpt_convert.py -p 8 -i gpt2 -o ./c-model/gpt2 --tensor-parallelism ${NUM_GPUS} --storage-type float16
     cd ${BASE_DIR}
 }
 
 function build_tensorrt_engine_inflight_batcher {
+    local NUM_GPUS=$1
     cd ${GPT_DIR}
+    MODEL_DIR=./c-model/gpt2/${NUM_GPUS}-gpu/
+    OUTPUT_DIR=inflight_${NUM_GPUS}_gpu/
     # ./c-model/gpt2/ must already exist (it will if build_base_model
     # has already been run)
-    python3 build.py --model_dir=./c-model/gpt2/1-gpu/ \
-                 --dtype float16 \
-                 --use_inflight_batching \
-                 --use_gpt_attention_plugin float16 \
-                 --paged_kv_cache \
-                 --use_gemm_plugin float16 \
-                 --remove_input_padding \
-                 --use_layernorm_plugin float16 \
-                 --hidden_act gelu \
-                 --output_dir=inflight_single_gpu/
-    cd ${BASE_DIR}
-
-}
-
-function build_tensorrt_engine_inflight_batcher_multi_gpu {
-    cd ${GPT_DIR}
-    python3 hf_gpt_convert.py -p 8 -i gpt2 -o ./c-model/gpt2 --tensor-parallelism 4 --storage-type float16
-    python3 build.py --model_dir=./c-model/gpt2/4-gpu/ \
-                 --world_size=4 \
+    python3 build.py --model_dir="${MODEL_DIR}" \
+                 --world_size="${NUM_GPUS}" \
                  --dtype float16 \
                  --use_inflight_batching \
                  --use_gpt_attention_plugin float16 \
@@ -68,7 +55,7 @@ function build_tensorrt_engine_inflight_batcher_multi_gpu {
                  --use_layernorm_plugin float16 \
                  --hidden_act gelu \
                  --parallel_build \
-                 --output_dir=inflight_multi_gpu/
+                 --output_dir="${OUTPUT_DIR}"
     cd ${BASE_DIR}
 }
 
@@ -85,14 +72,20 @@ function install_trt_llm {
 install_trt_llm
 
 # Generate the TRT_LLM model engines
-build_base_model
-build_tensorrt_engine_inflight_batcher
-build_tensorrt_engine_inflight_batcher_multi_gpu
+NUM_GPUS_TO_TEST=("1" "2" "4")
+for NUM_GPU in "${NUM_GPUS_TO_TEST[@]}"; do
+    AVAILABLE_GPUS=$(nvidia-smi -L | wc -l)
+    if [ "$AVAILABLE_GPUS" -lt "$NUM_GPU" ]; then
+        continue
+    fi
+
+    build_base_model "${NUM_GPU}"
+    build_tensorrt_engine_inflight_batcher "${NUM_GPU}"
+done
 
 # Move the TRT_LLM model engines to the CI directory
 mkdir engines
-mv ${GPT_DIR}/inflight_single_gpu engines/
-mv ${GPT_DIR}/inflight_multi_gpu engines/
+mv ${GPT_DIR}/inflight_*_gpu/ engines/
 
 # Move the tokenizer into the CI directory
 mkdir tokenizer
