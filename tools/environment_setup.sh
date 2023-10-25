@@ -40,5 +40,9 @@ pip uninstall -y tensorrt
 # Download & install internal TRT release
 bash tensorrt_llm/docker/common/install_tensorrt.sh
 
+ARCH="$(uname -i)"
+if [ "$ARCH" = "aarch64" ];then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; else TORCH_INSTALL_TYPE="pypi";fi
+bash tensorrt_llm/docker/common/install_pytorch.sh $TORCH_INSTALL_TYPE
+
 export LD_LIBRARY_PATH=/usr/local/tensorrt/lib/:$LD_LIBRARY_PATH
 export TRT_ROOT=/usr/local/tensorrt

@@ -72,13 +72,17 @@ function build_tensorrt_engine_inflight_batcher_multi_gpu {
     cd ${BASE_DIR}
 }
 
+function install_trt_llm {
+    ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
+    bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
+    export PATH="/usr/local/bin:${PATH}"
+    (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
+        python3 ./scripts/build_wheel.py --trt_root="${TRT_ROOT}" &&
+        pip install ./build/tensorrt_llm*.whl)
+}
+
 # Install TRT LLM
-ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
-bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
-export PATH="/usr/local/bin:${PATH}"
-(cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
-    python3 ./scripts/build_wheel.py --trt_root="${TRT_ROOT}" &&
-    pip install ./build/tensorrt_llm*.whl)
+install_trt_llm
 
 # Generate the TRT_LLM model engines
 build_base_model

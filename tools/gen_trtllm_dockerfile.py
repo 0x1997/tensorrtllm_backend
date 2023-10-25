@@ -61,6 +61,20 @@ ENV TRT_ROOT=/usr/local/tensorrt
     return df
 
 
+def install_pytorch():
+    df = """
+# Install PyTorch using the script from TRT-LLM
+COPY tensorrt_llm/docker/common/install_pytorch.sh /tmp/
+# `pypi` for x86_64 arch and `src_cxx11_abi` for aarch64 arch
+RUN ARCH="$(uname -i)" && \
+    if [ "${ARCH}" = "aarch64" ]; then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; \
+    else TORCH_INSTALL_TYPE="pypi"; fi && \
+    bash /tmp/install_pytorch.sh $TORCH_INSTALL_TYPE && rm /tmp/install_pytorch.sh
+"""
+
+    return df
+
+
 def create_postbuild(repo_tag="main"):
     df = """
 WORKDIR /workspace
@@ -74,6 +88,10 @@ RUN ARCH="$(uname -i)" && \
     rm -fr ${TRT_ROOT}/bin ${TRT_ROOT}/targets/${ARCH}-linux-gnu/bin ${TRT_ROOT}/data && \
     rm -fr  ${TRT_ROOT}/doc ${TRT_ROOT}/onnx_graphsurgeon ${TRT_ROOT}/python && \
     rm -fr ${TRT_ROOT}/samples  ${TRT_ROOT}/targets/${ARCH}-linux-gnu/samples
+
+# Install required packages for TRT-LLM models
+RUN python3 -m pip install --upgrade pip && \
+        pip3 install transformers
 
 # Uninstall unused nvidia packages
 RUN if pip freeze | grep -q "nvidia.*"; then \
@@ -98,6 +116,8 @@ COPY requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt --extra-index-url https://pypi.ngc.nvidia.com
 """
     df += install_new_version_of_TRT()
+    df += install_pytorch()
+
     df += """
 FROM base as dev
 
