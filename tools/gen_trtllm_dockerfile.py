@@ -26,7 +26,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
-import os
 
 FLAGS = None
 
@@ -121,18 +120,24 @@ ARG TRTLLM_BUILD_CONFIG={}
 """.format(FLAGS.trtllm_build_config)
     df += """
 RUN cd tensorrt_llm && python3 scripts/build_wheel.py --build_type=${TRTLLM_BUILD_CONFIG} --trt_root="${TRT_ROOT}" -i --clean
+"""
 
-# Copy all artifacts needed by the backend to /opt/tensorrtllm
+    if FLAGS.trtllm_build_config == "Release":
+        df += """
 ARG TRTLLM_BUILD_LIB=tensorrt_llm/cpp/build/tensorrt_llm
+"""
+    else:
+        df += """
+ARG TRTLLM_BUILD_LIB=tensorrt_llm/cpp/build_{}/tensorrt_llm
+""".format(FLAGS.trtllm_build_config)
+
+    df += """
+# Copy all artifacts needed by the backend to /opt/trtllm_lib
 RUN mkdir -p /opt/trtllm_lib && \
-    cp ${TRTLLM_BUILD_LIB}/libtensorrt_llm.so /opt/trtllm_lib && \
-    cp ${TRTLLM_BUILD_LIB}/thop/libth_common.so /opt/trtllm_lib && \
-    cp ${TRTLLM_BUILD_LIB}/plugins/libnvinfer_plugin_tensorrt_llm.so \
-        /opt/trtllm_lib && \
-    cp ${TRTLLM_BUILD_LIB}/plugins/libnvinfer_plugin_tensorrt_llm.so.9 \
-        /opt/trtllm_lib && \
-    cp ${TRTLLM_BUILD_LIB}/plugins/libnvinfer_plugin_tensorrt_llm.so.9.1.0 \
-        /opt/trtllm_lib
+    cp ${TRTLLM_BUILD_LIB}/plugins/libnvinfer_plugin_tensorrt_llm.so /opt/trtllm_lib && \
+    (cd /opt/trtllm_lib && \
+        ln -s libnvinfer_plugin_tensorrt_llm.so libnvinfer_plugin_tensorrt_llm.so.9 && \
+        ln -s libnvinfer_plugin_tensorrt_llm.so libnvinfer_plugin_tensorrt_llm.so.9.1.0)
 """
 
     with open(FLAGS.output, "w") as dfile:

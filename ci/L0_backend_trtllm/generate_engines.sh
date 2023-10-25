@@ -73,13 +73,14 @@ function build_tensorrt_engine_inflight_batcher_multi_gpu {
 }
 
 # Install TRT LLM
-# FIXME: Update the url
-pip install git+https://github.com/NVIDIA/TensorRT-LLM.git@${TENSORRTLLM_BACKEND_REPO_TAG}
-mkdir /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
-cp /opt/tritonserver/backends/tensorrtllm/* /usr/local/lib/python3.10/dist-packages/tensorrt_llm/libs/
-
-export LD_LIBRARY_PATH=/usr/local/tensorrt/lib/:$LD_LIBRARY_PATH
-export TRT_ROOT=/usr/local/tensorrt
+ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
+bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
+export PATH="/usr/local/bin:${PATH}"
+(cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
+    git lfs install &&
+    git lfs pull &&
+    python3 ./scripts/build_wheel.py --trt_root="${TRT_ROOT}" &&
+    pip install ./build/tensorrt_llm*.whl)
 
 # Generate the TRT_LLM model engines
 build_base_model
