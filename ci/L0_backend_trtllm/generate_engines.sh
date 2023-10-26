@@ -40,11 +40,11 @@ function build_base_model {
 function build_tensorrt_engine_inflight_batcher {
     local NUM_GPUS=$1
     cd ${GPT_DIR}
-    MODEL_DIR=./c-model/gpt2/${NUM_GPUS}-gpu/
-    OUTPUT_DIR=inflight_${NUM_GPUS}_gpu/
+    local GPT_MODEL_DIR=./c-model/gpt2/${NUM_GPUS}-gpu/
+    local OUTPUT_DIR=inflight_${NUM_GPUS}_gpu/
     # ./c-model/gpt2/ must already exist (it will if build_base_model
     # has already been run)
-    python3 build.py --model_dir="${MODEL_DIR}" \
+    python3 build.py --model_dir="${GPT_MODEL_DIR}" \
                  --world_size="${NUM_GPUS}" \
                  --dtype float16 \
                  --use_inflight_batching \
@@ -60,10 +60,17 @@ function build_tensorrt_engine_inflight_batcher {
 }
 
 function install_trt_llm {
-    ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
+    ARCH="$(uname -i)"
+    # Install CMake
+    wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
     bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
     export PATH="/usr/local/bin:${PATH}"
+
+    # PyTorch needs to be built from soure for aarch64
+    if [ "${ARCH}" = "aarch64" ]; then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; \
+    else TORCH_INSTALL_TYPE="pypi"; fi && \
     (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
+        bash docker/common/install_pytorch.sh $TORCH_INSTALL_TYPE &&
         python3 ./scripts/build_wheel.py --trt_root="${TRT_ROOT}" &&
         pip3 install ./build/tensorrt_llm*.whl)
 }
