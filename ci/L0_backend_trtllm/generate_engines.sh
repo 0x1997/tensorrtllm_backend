@@ -60,12 +60,12 @@ function build_tensorrt_engine_inflight_batcher {
 }
 
 function install_trt_llm {
-    ARCH="$(uname -i)"
     # Install CMake
-    bash docker/common/install_cmake.sh
+    bash /opt/tritonserver/tensorrtllm_backend/tensorrt_llm/docker/common/install_cmake.sh
     export PATH="/usr/local/cmake/bin:${PATH}"
 
     # PyTorch needs to be built from source for aarch64
+    ARCH="$(uname -i)"
     if [ "${ARCH}" = "aarch64" ]; then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; \
     else TORCH_INSTALL_TYPE="pypi"; fi && \
     (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
