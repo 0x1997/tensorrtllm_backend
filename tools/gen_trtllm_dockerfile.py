@@ -32,7 +32,7 @@ FLAGS = None
 
 def install_new_version_of_TRT(clone_repo=False, trtllm_be_repo_tag="main"):
     df = """
-# Remove prevous TRT installation
+# Remove previous TRT installation
 RUN apt-get remove --purge -y tensorrt* libnvinfer*
 RUN pip uninstall -y tensorrt
 
@@ -118,9 +118,9 @@ RUN pip3 install -r /tmp/requirements.txt --extra-index-url https://pypi.ngc.nvi
 FROM base as dev
 
 # CMake
-RUN ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
-RUN bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
-ENV PATH="/usr/local/bin:${PATH}"
+COPY tensorrt_llm/docker/common/install_cmake.sh /tmp/
+RUN bash /tmp/install_cmake.sh && rm /tmp/install_cmake.sh
+ENV PATH="/usr/local/cmake/bin:${PATH}"
 """
     df += install_new_version_of_TRT()
     df += install_pytorch()

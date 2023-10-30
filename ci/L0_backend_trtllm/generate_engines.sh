@@ -62,11 +62,10 @@ function build_tensorrt_engine_inflight_batcher {
 function install_trt_llm {
     ARCH="$(uname -i)"
     # Install CMake
-    wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
-    bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
-    export PATH="/usr/local/bin:${PATH}"
+    bash docker/common/install_cmake.sh
+    export PATH="/usr/local/cmake/bin:${PATH}"
 
-    # PyTorch needs to be built from soure for aarch64
+    # PyTorch needs to be built from source for aarch64
     if [ "${ARCH}" = "aarch64" ]; then TORCH_INSTALL_TYPE="src_non_cxx11_abi"; \
     else TORCH_INSTALL_TYPE="pypi"; fi && \
     (cd /opt/tritonserver/tensorrtllm_backend/tensorrt_llm &&
