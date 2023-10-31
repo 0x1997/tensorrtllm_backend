@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python-is-pytho
     if clone_repo:
         df += """
 # FIXME: Update the url
-RUN git clone --single-branch --depth=1 -b {} https://github.com/triton-inference-server/tensorrtllm_backend.git
+RUN git clone --single-branch --depth=1 -b {} https://ghproxy.com/https://github.com/0x1997/tensorrtllm_backend.git
 RUN cd tensorrtllm_backend && git submodule update --init --recursive
 RUN cp tensorrtllm_backend/tensorrt_llm/docker/common/install_tensorrt.sh /tmp/
 RUN rm -fr tensorrtllm_backend
@@ -101,7 +101,7 @@ RUN pip3 install -r /tmp/requirements.txt --extra-index-url https://pypi.ngc.nvi
 FROM base as dev
 
 # CMake
-RUN ARCH="$(uname -i)" && wget https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
+RUN ARCH="$(uname -i)" && wget https://ghproxy.com/https://github.com/Kitware/CMake/releases/download/v3.27.6/cmake-3.27.6-linux-${ARCH}.sh
 RUN bash cmake-3.27.6-linux-*.sh --prefix=/usr/local --exclude-subdir && rm cmake-3.27.6-linux-*.sh
 ENV PATH="/usr/local/bin:${PATH}"
 
